@@ -1,7 +1,7 @@
 MakeDIANA[fname_]:=
     Module[{str,dianaIdxSubs},
            
-           dianaIdxSubs = {lorentz[4]->lmu,color[3]->colF,color[8]->colA,generation[3]->genidx};
+           dianaIdxSubs = {lorentz[4]->lind,color[3]->colF,color[8]->colA,generation[3]->genidx};
            strModel = OpenWrite[fname<>".inc"];
            strSubs = OpenWrite[fname<>".hh"];
            (* Rules to convert conj and bar fields to symbols *)
@@ -10,24 +10,31 @@ MakeDIANA[fname_]:=
            Module[{scalarParticles, vectorParticles},
                   scalarParticles=Cases[Particles[GaugeES], {_, _, _, S, ___}, Infinity];
                   vectorParticles=Cases[Particles[GaugeES], {_, _, _, V, ___}, Infinity];
-                  ScalarLine[field_]:=
+                  Print[vectorParticles];
+                  ScalarLine[field_,nn_]:=
                   Module[{},
-                         WriteString[strModel,"["<>ToString[field[[1]]]<>","<>ToString[noanti[AntiField[field[[1]]]]]<>"; ; VV(              vec,51,num)"];
-                         If[MemberQ[field, {color, 8}, Infinity], WriteString[strModel,"*d_(colind:1,colind:2)"], WriteString[strModel,"       "]];
+                         WriteString[strModel,"["<>ToString[field[[1]]]<>","<>ToString[noanti[AntiField[field[[1]]]]]<>"; ; VV(              vec,"];
+                         If[MemberQ[field, {generation, 3}, Infinity], WriteString[strModel,ToString[generation[3]/.dianaIdxSubs]<>":1,"<>ToString[generation[3]/.dianaIdxSubs]<>":2,"],Null];
+                         WriteString[strModel,ToString[50+nn]<>",num)"]
+                         If[MemberQ[field, {color, 3}, Infinity], WriteString[strModel,"*d_("<>ToString[color[3]/.dianaIdxSubs]<>":1,"<>ToString[color[3]/.dianaIdxSubs]<>":2)"], 
+                            If[MemberQ[field, {color, 8}, Infinity], WriteString[strModel,"*d_("<>ToString[color[8]/.dianaIdxSubs]<>":1,"<>ToString[color[8]/.dianaIdxSubs]<>":2)"], WriteString[strModel,"       "]]];
                          WriteString[strModel,";0;     line,  8, 3]\n"];
                         ];
-                  VectorLine[field_]:=
+                  VectorLine[field_,nn_]:=
                   Module[{},
-                         WriteString[strModel,"["<>ToString[field[[1]]]<>","<>ToString[noanti[AntiField[field[[1]]]]]<>"; ; VV(lind:1, lind:2, vec,51,num)"]
-                         If[MemberQ[field, {color, 8}, Infinity], WriteString[strModel,"*d_(colind:1,colind:2)"], WriteString[strModel,"       "]];
+                         WriteString[strModel,"["<>ToString[field[[1]]]<>","<>ToString[noanti[AntiField[field[[1]]]]]<>"; ; VV(lind:1, lind:2, vec,"];
+                         If[MemberQ[field, {generation, 3}, Infinity], WriteString[strModel,ToString[generation[3]/.dianaIdxSubs]<>":1,"<>ToString[generation[3]/.dianaIdxSubs]<>":2,"],Null];
+                         WriteString[strModel,ToString[40+nn]<>",num)"]
+                         If[MemberQ[field, {color, 3}, Infinity], WriteString[strModel,"*d_("<>ToString[color[3]/.dianaIdxSubs]<>":1,"<>ToString[color[3]/.dianaIdxSubs]<>":2)"], 
+                            If[MemberQ[field, {color, 8}, Infinity], WriteString[strModel,"*d_("<>ToString[color[8]/.dianaIdxSubs]<>":1,"<>ToString[color[8]/.dianaIdxSubs]<>":2)"], WriteString[strModel,"       "]]];
                          WriteString[strModel,";0;     wavy,  8, 3]\n"];
                         ];
                   
                   WriteString[strModel,"\\Begin(boson)\n"];
                   WriteString[strModel,"* Scalar particles\n"];
-                  ScalarLine /@ scalarParticles;
+                  MapIndexed[(ScalarLine[#1,First[#2]])&, scalarParticles];
                   WriteString[strModel,"* Vector particles\n"];
-                  VectorLine /@ vectorParticles;
+                  MapIndexed[(VectorLine[#1,First[#2]])&, vectorParticles];
                   WriteString[strModel,"\\End(boson)\n"];
                   
                  ];
@@ -37,8 +44,11 @@ MakeDIANA[fname_]:=
                   fermionParticles=Cases[Particles[GaugeES], {_, _, _, F, ___}, Infinity];
                   FermionLine[field_, nn_]:=
                   Module[{},
-                         WriteString[strModel,"["<>ToString[field[[1]]]<>","<>ToString[noanti[AntiField[field[[1]]]]]<>"; ; FF(fnum,num,vec,"<>ToString[50+nn]<>")"]
-                         If[MemberQ[field, {color, 8}, Infinity], WriteString[strModel,"*d_(colind:1,colind:2)"], WriteString[strModel,"       "]];
+                         WriteString[strModel,"["<>ToString[field[[1]]]<>","<>ToString[noanti[AntiField[field[[1]]]]]<>"; ; FF(fnum,num,vec,"];
+                         If[MemberQ[field, {generation, 3}, Infinity], WriteString[strModel,ToString[generation[3]/.dianaIdxSubs]<>":1,"<>ToString[generation[3]/.dianaIdxSubs]<>":2,"],Null];
+                         WriteString[strModel,ToString[60+nn]<>")"];
+                         If[MemberQ[field, {color, 3}, Infinity], WriteString[strModel,"*d_("<>ToString[color[3]/.dianaIdxSubs]<>":1,"<>ToString[color[3]/.dianaIdxSubs]<>":2)"], 
+                            If[MemberQ[field, {color, 8}, Infinity], WriteString[strModel,"*d_("<>ToString[color[8]/.dianaIdxSubs]<>":1,"<>ToString[color[8]/.dianaIdxSubs]<>":2)"], WriteString[strModel,"       "]]];
                          WriteString[strModel,";0;    arrowLine,  0,"<>ToString[nn]<>"]\n"];
                         ];
                   MapIndexed[(FermionLine[#1,First[#2]])&, fermionParticles];
@@ -48,13 +58,15 @@ MakeDIANA[fname_]:=
            Module[{ghostParticles},
                   WriteString[strModel,"\\Begin(ghost)\n"];
                   ghostParticles=Cases[Particles[GaugeES], {_, _, _, G, ___}, Infinity];
-                  GhostLine[field_]:=
+                  GhostLine[field_,nn_]:=
                   Module[{},
-                         WriteString[strModel,"["<>ToString[field[[1]]]<>","<>ToString[noanti[AntiField[field[[1]]]]]<>"; ; SS(vec,51)"]
-                         If[MemberQ[field, {color, 8}, Infinity], WriteString[strModel,"*d_(colind:1,colind:2)"], WriteString[strModel,"       "]];
+                         WriteString[strModel,"["<>ToString[field[[1]]]<>","<>ToString[noanti[AntiField[field[[1]]]]]<>"; ; SS(vec,"]
+                         If[MemberQ[field, {generation, 3}, Infinity], WriteString[strModel,ToString[generation[3]/.dianaIdxSubs]<>":1,"<>ToString[generation[3]/.dianaIdxSubs]<>":2,"],Null];
+                         WriteString[strModel,ToString[70+nn]<>")"];
+                         If[MemberQ[field, {color, 8}, Infinity], WriteString[strModel,"*d_("<>ToString[color[8]/.dianaIdxSubs]<>":1,"<>ToString[color[8]/.dianaIdxSubs]<>":2)"], WriteString[strModel,"       "]];
                          WriteString[strModel,";0;     wavy,  8, 3]\n"];
                         ];
-                  GhostLine /@ ghostParticles;
+                  MapIndexed[(GhostLine[#1,First[#2]])&, ghostParticles];
 
                   WriteString[strModel,"\\End(ghost)\n"];
                  ];
@@ -68,7 +80,7 @@ MakeDIANA[fname_]:=
                   WriteString[strModel,"* "<>ToString[VS[[1]]]<>"\n"];
 
                   vl=SA`VertexList[VS[[1]]];
-                  Print["VertexList::::::::::: ", vl];
+                  (* Print["VertexList::::::::::: ", vl];*)
                   (* Output single vertex *)
                   PrintVertex[v_]:=
                   Module[{fields,indices},
