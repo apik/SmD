@@ -3,6 +3,7 @@ MakeDIANA[fname_]:=
            
            dianaIdxSubs = {lorentz[4]->lmu,color[3]->colF,color[8]->colA,generation[3]->genidx};
            strModel = OpenWrite[fname<>".inc"];
+           strSubs = OpenWrite[fname<>".hh"];
            (* Rules to convert conj and bar fields to symbols *)
            noanti[F_] := F/. {bar[a_] :> ToExpression["anti"<>ToString[a]], conj[a_] :> ToExpression["anti"<>ToString[a]]};
            PrintBosons[]:=
@@ -34,12 +35,27 @@ MakeDIANA[fname_]:=
            Module[{fermionParticles},
                   WriteString[strModel,"\\Begin(fermion)\n"];
                   fermionParticles=Cases[Particles[GaugeES], {_, _, _, F, ___}, Infinity];
+                  FermionLine[field_, nn_]:=
+                  Module[{},
+                         WriteString[strModel,"["<>ToString[field[[1]]]<>","<>ToString[noanti[AntiField[field[[1]]]]]<>"; ; FF(fnum,num,vec,"<>ToString[50+nn]<>")"]
+                         If[MemberQ[field, {color, 8}, Infinity], WriteString[strModel,"*d_(colind:1,colind:2)"], WriteString[strModel,"       "]];
+                         WriteString[strModel,";0;    arrowLine,  0,"<>ToString[nn]<>"]\n"];
+                        ];
+                  MapIndexed[(FermionLine[#1,First[#2]])&, fermionParticles];
                   WriteString[strModel,"\\End(fermion)\n"];
                  ];
            PrintGhosts[]:= (* ghost block *)
            Module[{ghostParticles},
                   WriteString[strModel,"\\Begin(ghost)\n"];
                   ghostParticles=Cases[Particles[GaugeES], {_, _, _, G, ___}, Infinity];
+                  GhostLine[field_]:=
+                  Module[{},
+                         WriteString[strModel,"["<>ToString[field[[1]]]<>","<>ToString[noanti[AntiField[field[[1]]]]]<>"; ; SS(vec,51)"]
+                         If[MemberQ[field, {color, 8}, Infinity], WriteString[strModel,"*d_(colind:1,colind:2)"], WriteString[strModel,"       "]];
+                         WriteString[strModel,";0;     wavy,  8, 3]\n"];
+                        ];
+                  GhostLine /@ ghostParticles;
+
                   WriteString[strModel,"\\End(ghost)\n"];
                  ];
            PrintBosons[];
@@ -64,13 +80,12 @@ MakeDIANA[fname_]:=
                                 (* Incorrect index range for adjoint representation *)
                                 (* lirSubs  = (#[[1]]->#[[1]][#[[2]]])& /@ getIndexRange[p];  *)
                                 (* Need to distinguish color,3 = colF and color,8 = colA *)
-                                lirSubs = Module[{idxRanges},
-                                                 idxRanges=(Cases[Cases[Particles[GaugeES], {getParticleName[p], _, _, _, {___, {#, _}, ___}}, Infinity] , {#, _}, Infinity])& /@ lidx;
-                                                 (#[[1,1]]->#[[1,1]][#[[1,2]]])& /@ idxRanges
-                                                ];
+                                lirSubs = 
+                                Module[{idxRanges},
+                                       idxRanges=(Cases[Cases[Particles[GaugeES], {getParticleName[p], _, _, _, {___, {#, _}, ___}}, Infinity] , {#, _}, Infinity])& /@ lidx;
+                                       (#[[1,1]]->#[[1,1]][#[[1,2]]])& /@ idxRanges
+                                      ];
                                 lidx /. lirSubs 
-                                
-                                
                                ];
                          
                          indices = If[Length[v] > 0, MapIndexed[({getPartIndices[#1],#2[[1]]})& , v[[1]]],{}];
@@ -84,6 +99,9 @@ MakeDIANA[fname_]:=
                                ];
                          
                          WriteString[strModel,"["<>StringReplace[ToString[noanti /@ fields],{"{"->"","}"->""}]<>"; ;"<>StringReplace[ToString[indexSTR[]],{"["->"(","]"->")"}]<>"]\n"];
+                         
+                         (* Output subs rule *)
+                         WriteString[strSubs,"id "<> StringReplace[ToString[noanti /@ fields],{"{"->"","}"->"",", "->"xx"}] <> " = "<>"\n"];
                         ];
                   
                   (* (WriteString[strModel,ToString[#[[1]]]<>"\n"])& /@ vl; *)
