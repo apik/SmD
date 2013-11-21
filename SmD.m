@@ -2,6 +2,7 @@ MakeDIANA[fname_]:=
     Module[{str,dianaIdxSubs},
            
            dianaIdxSubs = {lorentz[4]->lind,color[3]->colF,color[8]->colA,generation[3]->genidx};
+           formIdxSubs = {lorentz[4]->mul,color[3]->cOlFind,color[8]->cOlAind,generation[3]->jj};
            strModel = OpenWrite[fname<>".inc"];
            strSubs = OpenWrite[fname<>".hh"];
            (* Rules to convert conj and bar fields to symbols *)
@@ -101,19 +102,35 @@ MakeDIANA[fname_]:=
                                ];
                          
                          indices = If[Length[v] > 0, MapIndexed[({getPartIndices[#1],#2[[1]]})& , v[[1]]],{}];
-
+                         
+                         (* string of indices for vertex function *)
                          indexSTR[]:=
                          Module[{},  
 
                                 ff[bb_]:=({#,bb[[2]]})& /@ bb[[1]];
-                                ToExpression[StringReplace[ToString[noanti /@ fields],{"{"->"","}"->"",", "->"xx"}]] @@ ((ToString[#[[1]]]<>":"<>ToString[#[[2]]])& /@ Flatten[(ff[(# /. dianaIdxSubs)])& /@ indices,1])
+                                (* ToExpression[StringReplace[ToString[noanti /@ fields],{"{"->"","}"->"",", "->"xx"}]] @@  *)((ToString[#[[1]]]<>":"<>ToString[#[[2]]])& /@ Flatten[(ff[(# /. dianaIdxSubs)])& /@ indices,1])
                                 
                                ];
+                         funcSTR[]:= StringReplace[ToString[noanti /@ fields],{"{"->"","}"->"",", "->"xx"}];
+                               
                          
-                         WriteString[strModel,"["<>StringReplace[ToString[noanti /@ fields],{"{"->"","}"->""}]<>"; ;"<>StringReplace[ToString[indexSTR[]],{"["->"(","]"->")"}]<>"]\n"];
+                         WriteString[strModel,"["<>StringReplace[ToString[noanti /@ fields],{"{"->"","}"->""}]<>"; ;"<>funcSTR[]<>"("];
+                         (* Fermion line numbering *)
+                         If[VS[[1]]===FFV || VS[[1]]===FFS, WriteString[strModel,"fnum,"],Null];                         
+                         WriteString[strModel,StringReplace[ToString[indexSTR[]],{"["->"(","]"->")","{"->"","}"->""}]<>")]\n"];
                          
+                         (* Arguments of FORM subs instruction *)
+                         ArgumentsSTR[]:=
+                         Module[{},  
+                                ff[bb_]:=({#,bb[[2]]})& /@ bb[[1]];
+                                ((ToString[#[[1]]]<>ToString[#[[2]]]<>"?")& /@ Flatten[(ff[(# /. formIdxSubs)])& /@ indices,1])
+                               ];
                          (* Output subs rule *)
-                         WriteString[strSubs,"id "<> StringReplace[ToString[noanti /@ fields],{"{"->"","}"->"",", "->"xx"}] <> " = "<>"\n"];
+                         SubMom[vvi_]:=
+                         Module[{},
+                                vvi[[2]] /. Mom[a_,b_]:> ToExpression["xxpmom"<>ToString[Position[vvi[[1]],a]]][b]
+                               ]
+                         WriteString[strSubs,"id "<> StringReplace[ToString[noanti /@ fields],{"{"->"","}"->"",", "->"xx"}] <> ToString[ArgumentsSTR[]]<>" = "<>ToString[InputForm[SubMom[v]]]<>"\n"];
                         ];
                   
                   (* (WriteString[strModel,ToString[#[[1]]]<>"\n"])& /@ vl; *)
