@@ -1,12 +1,36 @@
+BeginPackage[ "SmD`",{"Global`",
+                      "SARAH`", (* main functions *)
+                      "Susyno`LieGroups`" (* conj[x] function *)
+                     }]
+MakeDIANA::usage = 
+    "MakeDIANA[\"filename\"] creates filename.inc and filename.hh"
+
+Print["SmD - SSARAH meets DIANA "(* ,SA`Version *) ]
+Print["by Andrey Pikelner, 2013"]
+Print[""];
+(* Print["References:"] *)
+(* Print["  Comput.Phys.Commun.181 (2010) 1077-1086. (arXiv:0909.2863[hep-ph])"] *)
+(* Print["  Comput.Phys.Commun.182 (2011) 808-833. (arXiv:1002.0840[hep-ph])"] *)
+(* Print["  Comput.Phys.Commun.184 (2013) 1792-1809. (arXiv:1207.0906[hep-ph])"] *)
+(* Print["  arXiv:1309.7223[hep-ph]"] *)
+Print["Download and Documentation:"]
+Print["  https://github.com/apik/SmD"]
+Print[""]
+
+
+Begin[ "Private`"]
+
 MakeDIANA[fname_]:=
     Module[{str,dianaIdxSubs},
-           
+           (* Testing contextes *)
+          
            dianaIdxSubs = {lorentz[4]->lind,color[3]->colF,color[8]->colA,generation[3]->genidx};
            formIdxSubs = {lorentz[4]->mul,color[3]->cOlFind,color[8]->cOlAind,generation[3]->jj};
            strModel = OpenWrite[fname<>".inc"];
            strSubs = OpenWrite[fname<>".hh"];
            (* Rules to convert conj and bar fields to symbols *)
            noanti[F_] := F/. {bar[a_] :> ToExpression["anti"<>ToString[a]], conj[a_] :> ToExpression["anti"<>ToString[a]]};
+           Print[noanti[conj[H0]]];
            PrintBosons[]:=
            Module[{scalarParticles, vectorParticles},
                   scalarParticles=Cases[Particles[GaugeES], {_, _, _, S, ___}, Infinity];
@@ -142,7 +166,11 @@ MakeDIANA[fname_]:=
            WriteString[strModel,"\\Begin(vertex)\n"];
            PrintVertices /@ ITypes;
            WriteString[strModel,"\\End(vertex)\n"];
-          ];
+          ]
+
+End[]
+    
+EndPackage[]
 
 
 
