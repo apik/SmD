@@ -117,6 +117,8 @@ MakeDIANA[fname_]:=
                          WriteString[strModel,"["<>StringReplace[ToString[noanti /@ fields],{"{"->"","}"->""}]<>"; ;"<>funcSTR[]<>"("];
                          (* Fermion line numbering *)
                          If[VS[[1]]===FFV || VS[[1]]===FFS, WriteString[strModel,"fnum,"],Null];                         
+                         (* if RHS needs momentums of particles in vertex *)
+                         MapIndexed[(If[Count[v[[2]],Mom[#1,_],Infinity] > 0, WriteString[strModel,"vec:"<>ToString[First[#2]]<>","]])&, v[[1]]];
                          WriteString[strModel,StringReplace[ToString[indexSTR[]],{"["->"(","]"->")","{"->"","}"->""}]<>")]\n"];
                          
                          (* Arguments of FORM subs instruction *)
@@ -128,8 +130,9 @@ MakeDIANA[fname_]:=
                          (* Output subs rule *)
                          SubMom[vvi_]:=
                          Module[{},
-                                vvi[[2]] /. Mom[a_,b_]:> ToExpression["xxpmom"<>ToString[Position[vvi[[1]],a]]][b]
-                               ]
+                                vvi[[2]] /. Mom[a_,b_]:> xxpmom[Position[vvi[[1]],a],b]
+                                (* /. Mom[a_,b_]:> p[Position[vvi[[1]],a]] *)                                
+                               ];
                          WriteString[strSubs,"id "<> StringReplace[ToString[noanti /@ fields],{"{"->"","}"->"",", "->"xx"}] <> ToString[ArgumentsSTR[]]<>" = "<>ToString[InputForm[SubMom[v]]]<>"\n"];
                         ];
                   
