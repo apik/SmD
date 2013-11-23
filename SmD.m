@@ -1,18 +1,17 @@
-BeginPackage[ "SmD`",{"Global`" (* , *)
-                      (* "SARAH`"  *)(* main functions *)
+BeginPackage[ "SmD`",{"Global`" ,
+                      "SARAH`"(* main functions *)
                       (* "Susyno`LieGroups`" (\* conj[x] function *\) *)
                      }]
+
+              (* Defualt package options: *)
+              Options[MakeDIANA] = {Model -> "SM", State->GaugeES};
+
               MakeDIANA::usage = 
-              "MakeDIANA[\"filename\"] creates filename.inc and filename.hh"
+              "MakeDIANA[\"filename\", Model->\"SM\", State->GaugeES] creates filename.inc and filename.hh"
               
               Print["SmD - SARAH meets DIANA "(* ,SA`Version *) ]
               Print["by Andrey Pikelner, 2013"]
               Print[""];
-              (* Print["References:"] *)
-              (* Print["  Comput.Phys.Commun.181 (2010) 1077-1086. (arXiv:0909.2863[hep-ph])"] *)
-              (* Print["  Comput.Phys.Commun.182 (2011) 808-833. (arXiv:1002.0840[hep-ph])"] *)
-              (* Print["  Comput.Phys.Commun.184 (2013) 1792-1809. (arXiv:1207.0906[hep-ph])"] *)
-              (* Print["  arXiv:1309.7223[hep-ph]"] *)
               Print["Download and Documentation:"]
               Print["  https://github.com/apik/SmD"]
               Print[""]
@@ -20,8 +19,11 @@ BeginPackage[ "SmD`",{"Global`" (* , *)
               
               Begin[ "Private`"]
               
-              MakeDIANA[fname_]:=
+              MakeDIANA[fname_,OptionsPattern[]]:=
               Module[{str,dianaIdxSubs,formIdxSubs,generation,lorentz},
+
+                     Start[OptionValue[Model]];
+                     MakeVertexList[OptionValue[State]];
 
                      (* Substitutions for DIANA index groups definitions *)
                      dianaIdxSubs = {lorentz[4]->lind,color[3]->colF,color[8]->colA,generation[3]->genidx};
@@ -122,11 +124,9 @@ BeginPackage[ "SmD`",{"Global`" (* , *)
                             (* list of all vertices with Lorentz structure defined in VS *)
                             vl=SA`VertexList[VS[[1]]];
 
-                            
-                            (* (WriteString[strModel,ToString[#[[1]]]<>"\n"])& /@ vl; *)
-                            (PrintVertex[#, If[VS[[1]]===SARAH`FFV || VS[[1]]===SARAH`FFS,True,False]])& /@ vl;
+                            (PrintVertex[#, If[VS[[1]]===FFV || VS[[1]]===FFS, True, False]])& /@ vl;
                            ];
- (* Output single vertex *)
+                     (* Output single vertex *)
                      PrintVertex[v_,hasFermionLegs_]:=
                      Module[{fields,indices},
                             fields = If[Length[v] > 0, (If[Head[#] === Susyno`LieGroups`conj|| Head[#] === SARAH`bar,SARAH`AntiField[SARAH`getParticleName[#]],SARAH`getParticleName[#]])& /@ v[[1]],{}];
@@ -160,7 +160,7 @@ BeginPackage[ "SmD`",{"Global`" (* , *)
                             
                             WriteString[strModel,"["<>StringReplace[ToString[noanti /@ fields],{"{"->"","}"->""}]<>"; ;"<>funcSTR[]<>"("];
                             (* Fermion line numbering *)
-                            If[hasFermionLags,WriteString[strModel,"fnum,"]];
+                            If[hasFermionLegs,WriteString[strModel,"fnum,"]];
                             (* if RHS needs momentums of particles in vertex *)
                             MapIndexed[(If[Count[v[[2]],SARAH`Mom[#1,_],Infinity] > 0, WriteString[strModel,"vec:"<>ToString[First[#2]]<>","]])&, v[[1]]];
                             WriteString[strModel,StringReplace[ToString[indexSTR[]],{"["->"(","]"->")","{"->"","}"->""}]<>")]\n"];
