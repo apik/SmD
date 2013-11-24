@@ -1,3 +1,3 @@
 <<SmD`
 
-MakeDIANA["ttt", Model->"SM", State->EWSB]
+MakeDIANA["ttt", Model->"SM", State->GaugeES]
