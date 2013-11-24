@@ -32,7 +32,7 @@ BeginPackage[ "SmD`",{"Global`" ,
                      Format[color[8]]     :="colA";
                      Format[generation[3]]:="genER";
                      Format[MomentumVector]:="p";
-                     Format[MomentumVector[i_,mu_]]:="p"<>ToString[i]<>"("<>ToString[mu]<>")";
+                     Format[MomentumVector[i_,mu_]]:="p"<>ToString[i]<>"["<>ToString[mu]<>"]";
                      
                      (* Print["Context: ",Context[dianaIdxSubs]]; *)
 
@@ -176,7 +176,7 @@ BeginPackage[ "SmD`",{"Global`" ,
                             (* Output subs rule *)
                             SubMom[vvi_]:=
                             Module[{},
-                                   vvi[[2]] /. Mom[a_,b_]:> ToExpression[ToString[MomentumVector[Position[vvi[[1]],a][[1,1]],b]]]
+                                   Simplify[Plus @@ ((#[[1]]*#[[2]])& /@ (Take[vvi,1-Length[vvi]] /. Mom[a_,b_]:> ToExpression[ToString[MomentumVector[Position[vvi[[1]],a][[1,1]],b]]]))]
                                    (* /. Mom[a_,b_]:> p[Position[vvi[[1]],a]] *)                                
                                   ];
 
@@ -194,7 +194,7 @@ BeginPackage[ "SmD`",{"Global`" ,
                             MapIndexed[(If[#1[[2]],WriteString[strSubs,ToString[MomentumVector]<>ToString[#2[[1]]]<>"?,"]])&, vertexLegs];
                             (* Other indices *)
                             WriteString[strSubs,StringReplace[ToString[ArgumentsSTR],{"{"->"","}"->""}]<>") = "];
-                            WriteString[strSubs,ToString[InputForm[SubMom[v]]]<>"\n"];
+                            WriteString[strSubs,StringReplace[ToString[InputForm[SubMom[v]]],{"["->"(","]"->")","I"->"i_"}]<>";\n"];
                            ];
                      
                      (* Return list with info about all legs ingoing for vertex *)
@@ -206,7 +206,7 @@ BeginPackage[ "SmD`",{"Global`" ,
                      (* 2: Is this momentum needed for RHS *)
                      MomentumNeeded[vf_,rhs_]:= (Count[rhs,Mom[vf,_],Infinity] > 0);
                      (* 3: Index List *)
-                     GetIndexList[vf_]:=If[Length[getPartIndices[vf]] > 0, MapThread[({#1,#2})&, {Flatten[{If[Head[vf] === Susyno`LieGroups`conj|| Head[vf] === SARAH`bar,First[vf] /. SARAH`getParticleName[vf]:>List,vf /. SARAH`getParticleName[vf]:>List]}],getPartIndices[vf]}],{}]; (* getPartIndices[vf]; *)(* MapIndexed[()&,getIndizes[vf]]; *)
+                     GetIndexList[vf_]:=If[Length[getPartIndices[vf]] > 0, MapThread[({#1,#2})&, {Flatten[{If[Head[vf] === Susyno`LieGroups`conj|| Head[vf] === SARAH`bar,First[vf] /. SARAH`getParticleName[vf]:>List,vf /. SARAH`getParticleName[vf]:>List]}],getPartIndices[vf]}],{}]; 
                      (* 4: Mark Fermion Legs *)
                      IsFermionLeg[vf_]:= (SARAH`getType[vf] === F);
 
