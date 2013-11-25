@@ -10,7 +10,7 @@ efficient program for multi-loop diagram generation.
 
 This connection can expand set of models available in multi-loop calculations.
 
-Neede tools are available for download:
+Needed tools are available for download:
 
 SARAH: http://sarah.hepforge.org
 
@@ -27,5 +27,10 @@ Usage
 ----------
  ```
  <<SmD`
- MakeDIANA("output_file_name",[Options])
+ MakeDIANA["output_file_name",Options]
  ```
+Options are:
+
+`Model->"SM"` Model name specification
+
+`State->GaugeES` choose SARAH model eigenstate
